@@ -76,161 +76,61 @@ public class Path {
         return waypoints;
     }
     
-    /**
-     * Returns in degrees per second, positive clockwise.
-     */
-    public double getRotationSpeed(){
-        double speed = rotSpeed.getAsDouble();
-        WaypointConstraints waypointConstraints = getCurrentWaypoint().getRotationConstraints();
-        if(speed > waypointConstraints.getMaxSpeed()) {
-            speed = waypointConstraints.getMaxSpeed();
-        }
-        if(speed < -waypointConstraints.getMaxSpeed()){
-            speed = -waypointConstraints.getMaxSpeed();
-        }
-        if(Math.abs(speed) < waypointConstraints.getMinSpeed()){
-            if(speed > 0){
-                speed = waypointConstraints.getMinSpeed();
-            }else{
-                speed = -waypointConstraints.getMinSpeed();
-            }
-        }
-        //speed = rotSpeed.getAsDouble();
-        return speed;
-    }
+   
 
     /**
-     * Returns in meters per second.
+     * Units are in Meters and Radians
+     * @returns a ChassisSpeeds with limits applied
+     * 
      */
-    public double getTranslationXSpeed(){
-        double combinedSpeed = Math.hypot(xTransSpeed.getAsDouble(), yTransSpeed.getAsDouble());
-        double angle = Math.atan2(yTransSpeed.getAsDouble(), xTransSpeed.getAsDouble());
-        double speed = xTransSpeed.getAsDouble();
-        WaypointConstraints waypointConstraints = getCurrentWaypoint().getTranslationConstraints();
-
-        if(Math.abs(combinedSpeed) > waypointConstraints.getMaxSpeed()){
-            if(combinedSpeed > waypointConstraints.getMaxSpeed()){
-                speed = Math.cos(angle) * waypointConstraints.getMaxSpeed();
-            }else {
-                speed = Math.cos(angle) * -waypointConstraints.getMaxSpeed();
-            }
-        }
-        
-        if(Math.abs(combinedSpeed) < waypointConstraints.getMinSpeed()){
-            if(combinedSpeed > 0){
-                speed = Math.cos(angle) * waypointConstraints.getMinSpeed();
-            }else{
-                speed = Math.cos(angle) * -waypointConstraints.getMinSpeed();
-            }
-        }
-
-        double acceleration = Math.abs(speed) - Math.abs(lastXSpeed);
-
-        if (acceleration > 0.06) {
-            if (speed > 0 && speed > lastXSpeed) {
-                speed = lastXSpeed + 0.06;
-            } else if (speed < 0 && speed < lastXSpeed) {
-                speed = lastXSpeed - 0.06;
-            }
-        } else if (acceleration < -0.06) {
-            if (speed > 0 && speed < lastXSpeed) {
-                speed = lastXSpeed - 0.06;
-            } else if (speed <= 0 && speed > lastXSpeed) {
-                speed = lastXSpeed + 0.06;
-            }
-        } 
-        SmartDashboard.putNumber(("xSpeed"), speed);
-
-        if (firstSpeed) {
-            return lastXSpeed;
-        } else {
-            return speed;
-        }
-
-      
-    }
-
-    /**
-     * Returns in meters per second.
-     */
-    public double getTranslationYSpeed(){
-        double combinedSpeed = Math.hypot(xTransSpeed.getAsDouble(), yTransSpeed.getAsDouble());
-        double angle = Math.atan2(yTransSpeed.getAsDouble(), xTransSpeed.getAsDouble());
-        double speed = yTransSpeed.getAsDouble();
-        WaypointConstraints waypointConstraints = getCurrentWaypoint().getTranslationConstraints();
-        
-        if(Math.abs(combinedSpeed) > waypointConstraints.getMaxSpeed()){
-            if(combinedSpeed > waypointConstraints.getMaxSpeed()){
-                speed = Math.sin(angle) * waypointConstraints.getMaxSpeed();
-            }else {
-                speed = Math.sin(angle) * -waypointConstraints.getMaxSpeed();
-            }
-        }
-        
-        if(Math.abs(combinedSpeed) < waypointConstraints.getMinSpeed()){
-            if(combinedSpeed > 0){
-                speed = Math.sin(angle) * waypointConstraints.getMinSpeed();
-            }else{
-                speed = Math.sin(angle) * -waypointConstraints.getMinSpeed();
-            }
-        }
-
-        double acceleration = Math.abs(speed) - Math.abs(lastYSpeed);
-
-        if (acceleration > 0.06) {
-            if (speed > 0 && speed > lastYSpeed) {
-                speed = lastYSpeed + 0.06;
-            } else if (speed < 0 && speed < lastYSpeed) {
-                speed = lastYSpeed - 0.06;
-            }
-        } else if (acceleration < -0.06) {
-            if (speed > 0 && speed < lastYSpeed) {
-                speed = lastYSpeed - 0.06;
-            } else if (speed <= 0 && speed > lastYSpeed) {
-                speed = lastYSpeed + 0.06;
-            }
-        } 
-
-        SmartDashboard.putNumber("ySpeed", speed);
-
-        if (firstSpeed) {
-            return lastYSpeed;
-        }
-        else {
-            return speed;
-        }
-
-
-
-        
-        
-    }
 
     public ChassisSpeeds getChassisSpeeds(){
         double dt = 1.0/50.0;
 
         double desCompSpeed = Math.hypot(xTransSpeed.getAsDouble(), yTransSpeed.getAsDouble());
+        double rotSpeed = this.rotSpeed.getAsDouble();
         double xSpeed = xTransSpeed.getAsDouble();
         double ySpeed = yTransSpeed.getAsDouble();
         WaypointConstraints constraints = getCurrentWaypoint().getTranslationConstraints();
+        WaypointConstraints rotConstraints = getCurrentWaypoint().getRotationConstraints();
 
-        if (desCompSpeed > constraints.getMaxSpeed()) {
+        //Trans speed limits
+
+        if (desCompSpeed != 0 && desCompSpeed > constraints.getMaxSpeed()) {
             xSpeed = xSpeed * constraints.getMaxSpeed() / desCompSpeed;
             ySpeed = ySpeed * constraints.getMaxSpeed() / desCompSpeed;
             }  
         
-        if (desCompSpeed < constraints.getMinSpeed()) {
+        
+        if (desCompSpeed != 0 && desCompSpeed < constraints.getMinSpeed()) {
             xSpeed = xSpeed * constraints.getMinSpeed() / desCompSpeed;
             ySpeed = ySpeed * constraints.getMinSpeed() / desCompSpeed;
         }
 
+
+        //Rot Speed limits
+
+        if (Math.abs(rotSpeed) > rotConstraints.getMaxSpeed()) {
+            rotSpeed = Math.copySign(rotConstraints.getMaxSpeed(), rotSpeed);
+        }
+
+        if (rotSpeed != 0 && Math.abs(rotSpeed) < rotConstraints.getMinSpeed()) {
+            rotSpeed = Math.copySign(rotConstraints.getMinSpeed(), rotSpeed);
+        }
+
+        
+        // Acceleration limits
+
         double dx = xSpeed - lastXSpeed;
         double dy = ySpeed - lastYSpeed;
 
+        double deltaO = rotSpeed - lastRotSpeed;
+        double maxDeltaOmega = rotConstraints.getMaxAccel() * dt;
         double deltaV = Math.hypot(dx, dy);
+        double maxDeltaV = constraints.getMaxAccel() * dt;
 
-        if (deltaV > 0.06) {
-            double scale =  constraints.getMaxAccel() *dt / deltaV;
+        if (deltaV > maxDeltaV) {
+            double scale =  maxDeltaV / deltaV;
             dx *= scale;
             dy *= scale;
 
@@ -238,9 +138,17 @@ public class Path {
             ySpeed = lastYSpeed + dy;
         }
 
-        ChassisSpeeds limitSpeed = new ChassisSpeeds(xSpeed, ySpeed, getRotationSpeed());
+        if (Math.abs(deltaO) > maxDeltaOmega) {
+            deltaO = Math.copySign(maxDeltaOmega, deltaO);
 
-        setLastSpeeds(limitSpeed.vxMetersPerSecond, limitSpeed.vyMetersPerSecond, getRotationSpeed());
+            rotSpeed = lastRotSpeed + deltaO;
+        }
+        
+        //finished var constructed and lastSpeeds set
+
+        ChassisSpeeds limitSpeed = new ChassisSpeeds(xSpeed, ySpeed, Math.toRadians(rotSpeed));
+
+        setLastSpeeds(limitSpeed.vxMetersPerSecond, limitSpeed.vyMetersPerSecond, Math.toRadians(rotSpeed));
         
         return limitSpeed;
         
@@ -374,7 +282,7 @@ public class Path {
             System.out.println("waypoints null");
             return;
         }
-        if(waypoints[currentWaypointIndex].isAtWaypoint(robotPose.get(), new ChassisSpeeds(getTranslationXSpeed(), getTranslationYSpeed(), getRotationSpeed())))
+        if(waypoints[currentWaypointIndex].isAtWaypoint(robotPose.get(), new ChassisSpeeds(getChassisSpeeds().vxMetersPerSecond, getChassisSpeeds().vyMetersPerSecond, getChassisSpeeds().omegaRadiansPerSecond)))
         {
             System.out.println("Next Waypoint");
             if(currentWaypointIndex == waypoints.length - 1){

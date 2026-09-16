@@ -38,11 +38,11 @@ public class Autonomous extends SubsystemBase {
     private WaypointConstraints fastTransConstraints = new WaypointConstraints(8, 0, 6, 1);
     private WaypointConstraints fastRotConstraints = new WaypointConstraints(720, 0, 180, 90);
     
-    private WaypointConstraints balancedTransConstraints = new WaypointConstraints(6, 2, 4, 0.4);
-    private WaypointConstraints balancedRotConstraints = new WaypointConstraints(270, 0, 90, 5);
+    private WaypointConstraints balancedTransConstraints = new WaypointConstraints(6, 2, 6, 0.5);
+    private WaypointConstraints balancedRotConstraints = new WaypointConstraints(270, 0, 180, 5);
 
-    private WaypointConstraints slowTransConstraints = new WaypointConstraints(1, 0, 2, 0.2);
-    private WaypointConstraints slowRotConstraints = new WaypointConstraints(180, 0, 45, 0.8);
+    private WaypointConstraints slowTransConstraints = new WaypointConstraints(1, 0, 6, 0.25);
+    private WaypointConstraints slowRotConstraints = new WaypointConstraints(180, 0, 180, 0.8);
 
     private SendableChooser<Autos> autoChooser = new SendableChooser<>();
     private SuperStructure superStructure;
@@ -401,7 +401,7 @@ public class Autonomous extends SubsystemBase {
 
                 //waypoints.add(balancedPoint(5.86, 1.86, 90)); // uncomment if running into wall
                 waypoints.add(balancedPoint(5.86, 0.68, 90));
-                waypoints.add(balancedPoint(3.94, 0.68, 90));
+                waypoints.add(fastPoint(3.94, 0.68, 90));
                 break;
             case LSweepToTrench:
                 //waypoints.add(fastPoint(6.334, 4.4, 63)); // temp uncomment

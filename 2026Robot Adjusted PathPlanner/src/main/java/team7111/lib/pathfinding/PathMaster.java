@@ -148,8 +148,8 @@ public class PathMaster {
         } else {
         
         ChassisSpeeds chassisSpeeds = fieldRelative
-            ? ChassisSpeeds.fromFieldRelativeSpeeds(path.getChassisSpeeds().vxMetersPerSecond, path.getChassisSpeeds().vyMetersPerSecond, path.getRotationSpeed(), gyroYaw.get().times(invertedGyro))
-            : new ChassisSpeeds(path.getTranslationXSpeed(), path.getTranslationYSpeed(), path.getRotationSpeed());
+            ? ChassisSpeeds.fromFieldRelativeSpeeds(path.getChassisSpeeds().vxMetersPerSecond, path.getChassisSpeeds().vyMetersPerSecond, path.getChassisSpeeds().omegaRadiansPerSecond, gyroYaw.get().times(invertedGyro))
+            : new ChassisSpeeds(path.getChassisSpeeds().vxMetersPerSecond, path.getChassisSpeeds().vyMetersPerSecond, path.getChassisSpeeds().omegaRadiansPerSecond);
 
         return chassisSpeeds;
 
